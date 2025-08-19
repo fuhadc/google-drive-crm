@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📁 Report Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/upload.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/image_optimizer.css') }}">
+
+  <script>
+    if (typeof JSZip === "undefined") {
+      alert("❌ JSZip failed to load.");
+    }
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .card h3 {
+      margin-top: 0;
+    }
+    .preview img {
+      width: 150px;
+      height: auto;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      object-fit: cover;
+    }
+    form {
+      display: inline-block;
+      margin-top: 5px;
+    }
+    .control-buttons form {
+      display: inline-block;
+      margin-right: 10px;
+    }
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000000cc;
+      color: white;
+      font-size: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #progressContainer {
+      margin-top: 20px;
+      width: 80%;
+      text-align: center;
+    }
+    progress {
+      width: 100%;
+      height: 24px;
+    }
+    #progressText {
+      margin-top: 10px;
+      display: block;
+    }
+    
+    /* Filter Controls Styling */
+    .filter-controls {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    
+    .filter-controls input,
+    .filter-controls select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .filter-controls input:focus,
+    .filter-controls select:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+    
+    .filter-controls button {
+      padding: 8px 16px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .filter-controls button:hover {
+      background: #5a6268;
+    }
+    
+    .filter-controls label {
+      font-weight: bold;
+      margin-right: 8px;
+      color: #333;
+    }
+    
+    #filterResults {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .new-badge {
+      background: #28a745;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 10px;
+      font-weight: normal;
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<!-- Debug Information -->
+<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 14px; color: #666;">
+  <strong>📊 System Status:</strong><br>
+  • Google Drive files found: <strong>{{ table|length }}</strong><br>
+  • Downloaded reports: <strong>{{ cards|length }}</strong><br>
+  • Total files tracked: <strong>{{ (table|length) + (cards|length) }}</strong>
+</div>
+
+<h2>🗂️ Google Drive Files (Not Yet Downloaded) <span style="font-size: 14px; color: #666;">({{ table|length }} files)</span></h2>
+<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; margin-bottom: 40px;">
+        <thead>
+    <tr>
+      <th>File Name</th>
+      <th>Status</th>
+      <th>Created Date</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if table %}
+      {% for file_id, info in table.items() %}
+      <tr>
+        <td>{{ info.name }}</td>
+        <td>{{ info.status }}</td>
+        <td>
+          {% if info.created_at %}
+            {% if info.created_at is string %}
+              {{ info.created_at }}
+            {% else %}
+              {{ format_datetime(info.created_at) }}
+            {% endif %}
+          {% else %}
+            N/A
+          {% endif %}
+        </td>
+        <td>
+         <form action="{{ url_for('ir_processing.start_editing', file_id=file_id) }}" method="post">
+            <button type="submit">🚀 Start Editing</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 20px; color: #666;">
+          🎉 All Google Drive files have been processed! No new files to download.
+        </td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>
+
+<h2>📂 Active Reports (Downloaded)</h2>
+<!-- Filter Controls -->
+<div class="filter-controls">
+  <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+    <div>
+      <label for="searchInput">🔍 Search:</label>
+      <input type="text" id="searchInput" placeholder="Search by report name..." style="width: 250px;">
+    </div>
+    <div>
+      <label for="statusFilter">📊 Status:</label>
+      <select id="statusFilter">
+        <option value="">All Statuses</option>
+        <option value="Pending">Pending</option>
+        <option value="Ongoing">Ongoing</option>
+        <option value="Done">Done</option>
+      </select>
+    </div>
+    <div>
+      <button onclick="clearFilters()">Clear Filters</button>
+    </div>
+  </div>
+  <div>
+    <span id="filterResults">Showing all reports</span>
+  </div>
+</div>
+
+{% for file_id, info in cards.items() %}
+  <div class="card" data-name="{{ info.name.lower() }}" data-status="{{ info.status }}">
+    <h3>
+      {{ info.name }}
+      {% if loop.index == 1 and info.last_modified %}
+      <span class="new-badge">🆕 New</span>
+      {% endif %}
+    </h3>
+    <p>Status: <strong>{{ info.status }}</strong></p>
+    <p>Total Images: <strong>{{ info.num_images }}</strong></p>
+    {% if info.last_modified %}
+    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+      📅 Last edited: {{ format_datetime(info.last_modified) }}
+    </p>
+    {% endif %}
+
+    <form method="POST" action="/update">
+      <input type="hidden" name="file_id" value="{{ file_id }}">
+      <select name="status">
+        <option value="Pending" {% if info.status == 'Pending' %}selected{% endif %}>Pending</option>
+        <option value="Ongoing" {% if info.status == 'Ongoing' %}selected{% endif %}>Ongoing</option>
+        <option value="Done" {% if info.status == 'Done' %}selected{% endif %}>Done</option>
+      </select>
+      <button type="submit">Update</button>
+    </form>
+
+    {% if info.images %}
+    <div class="preview">
+      <strong>Preview:</strong>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+        {% for image in info.images[:3] %}
+        <img src="{{ url_for('google_drive.serve_thumbnail', filename=file_id ~ '/' ~ image) }}?size=100x100&v={{ info.versions[image] }}" 
+             data-full-size="{{ url_for('google_drive.serve_unzipped_image', filename=file_id ~ '/' ~ image) }}?v={{ info.versions[image] }}"
+             alt="preview"
+             loading="lazy"
+             style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="control-buttons">
+     <form action="{{ url_for('ir_processing.preview', file_id=file_id) }}" method="get">
+        <button type="submit">🔍 View All Images</button>
+      </form>
+     <form action="{{ url_for('google_drive.download_zip', file_id=file_id) }}" method="get">
+        <button type="submit">⬇️ Download ZIP</button>
+      </form>
+     <form action="{{ url_for('dashboard.delete', file_id=file_id) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this folder and all its contents?');">
+        <button type="submit" style="background: #d9534f; color: white;">🗑️ Delete Folder</button>
+      </form>
+    </div>
+  </div>
+{% endfor %}
+
+<hr>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<h3>📤 Create New Report via Manual Upload</h3>
+
+<!-- Trigger Button -->
+<button onclick="openUploadDialog()">➕ Upload Images</button>
+
+<!-- Modal Dialog -->
+<div id="uploadDialog" style="display:none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 1000;">
+  <h4>Upload New Report</h4>
+
+  <form id="uploadForm" enctype="multipart/form-data" onsubmit="event.preventDefault(); zipAndUpload();">
+    <input type="text" id="zipNameInput" placeholder="Enter report name..." required><br><br>
+    <input type="file" id="imageInput" name="images" multiple accept="image/*" required><br><br>
+
+    <!-- Image Preview Container -->
+    <div id="previewContainer" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 200px; overflow-y: auto;"></div><br>
+
+    <!-- Upload Button (inside modal) -->
+    <button type="submit">🚀 Upload</button>
+
+    <!-- Progress Bar -->
+    <div id="progressContainer" style="display:none; margin-top: 10px;">
+      <progress id="uploadProgress" value="0" max="100" style="width: 100%;"></progress>
+      <span id="progressText">0%</span>
+    </div>
+  </form>
+
+  <!-- Cancel -->
+  <button onclick="closeUploadDialog()" style="margin-top: 15px;">❌ Cancel</button>
+</div>
+
+<!-- Snackbar -->
+<div id="snackbar" style="visibility: hidden; min-width: 250px; background-color: #4CAF50; color: white; text-align: center; padding: 10px; border-radius: 4px; position: fixed; z-index: 9999; bottom: 30px; left: 50%; transform: translateX(-50%);">
+  Upload complete!
+</div>
+
+<!-- JS + Logic -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+<script>
+  function openUploadDialog() {
+    document.getElementById("uploadDialog").style.display = "block";
+  }
+
+  function closeUploadDialog() {
+    // Clear and reset everything
+    document.getElementById("uploadDialog").style.display = "none";
+    document.getElementById("uploadForm").reset();
+    document.getElementById("previewContainer").innerHTML = '';
+    document.getElementById("progressContainer").style.display = "none";
+    document.getElementById("uploadProgress").value = 0;
+    document.getElementById("progressText").innerText = "0%";
+  }
+
+  // Preview thumbnails + filenames
+  document.getElementById("imageInput").addEventListener("change", function () {
+    const previewContainer = document.getElementById("previewContainer");
+    previewContainer.innerHTML = "";
+    const files = this.files;
+
+    for (let i = 0; i < files.length; i++) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const div = document.createElement("div");
+        div.style.textAlign = "center";
+        div.innerHTML = `
+          <img src="${e.target.result}" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px;">
+          <div style="font-size: 12px; max-width: 100px; word-wrap: break-word;">${files[i].name}</div>
+        `;
+        previewContainer.appendChild(div);
+      };
+      reader.readAsDataURL(files[i]);
+    }
+  });
+
+  // Zip and upload
+  async function zipAndUpload() {
+    const files = document.getElementById("imageInput").files;
+    const zipNameInput = document.getElementById("zipNameInput").value.trim();
+
+    if (!files.length || !zipNameInput) {
+      alert("Please select images and enter a report name.");
+      return;
+    }
+
+    console.log(`Starting upload of ${files.length} files with name: ${zipNameInput}`);
+    console.log("File sizes:", Array.from(files).map(f => `${f.name}: ${(f.size / 1024 / 1024).toFixed(2)}MB`));
+
+    document.body.style.cursor = 'wait';
+    const zip = new JSZip();
+
+    for (let i = 0; i < files.length; i++) {
+      zip.file(files[i].name, files[i]);
+      if (i % 20 === 0) await new Promise(r => setTimeout(r, 10));
+    }
+
+    const blob = await zip.generateAsync({
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 }
+    });
+
+    const formData = new FormData();
+    formData.append("zipfile", blob, zipNameInput + ".zip");
+    formData.append("custom_name", zipNameInput);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/manual_upload_zip", true);
+    
+    // Set timeout to 5 minutes
+    xhr.timeout = 300000; // 5 minutes in milliseconds
+
+    document.getElementById("progressContainer").style.display = "block";
+
+    xhr.upload.onprogress = function (e) {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        document.getElementById("uploadProgress").value = percent;
+        document.getElementById("progressText").innerText = percent + "%";
+      }
+    };
+
+    xhr.onload = function () {
+      document.body.style.cursor = 'default';
+      if (xhr.status === 200) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          if (response.success) {
+            showSnackbar("✅ Upload complete! " + response.num_images + " images uploaded.");
+            setTimeout(() => window.location.href = "/dashboard", 1500);
+          } else {
+            alert("❌ Upload failed:\n" + (response.error || "Unknown error"));
+          }
+        } catch (e) {
+          // If response is not JSON, treat as plain text
+          if (xhr.responseText.includes("OK")) {
+            showSnackbar("✅ Upload complete!");
+            setTimeout(() => window.location.href = "/dashboard", 1500);
+          } else {
+            alert("❌ Upload failed:\n" + xhr.responseText);
+          }
+        }
+      } else {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          alert("❌ Upload failed:\n" + (response.error || "Server error"));
+        } catch (e) {
+          alert("❌ Upload failed:\n" + xhr.responseText);
+        }
+      }
+    };
+
+    xhr.onerror = function () {
+      document.body.style.cursor = 'default';
+      console.error("XHR error:", xhr);
+      alert("❌ Network error during upload. Please check your connection and try again.");
+    };
+
+    xhr.ontimeout = function () {
+      document.body.style.cursor = 'default';
+      console.error("XHR timeout");
+      alert("❌ Upload timeout. The request took too long. Please try again with a smaller file or check your connection.");
+    };
+
+    xhr.send(formData);
+  }
+
+  function showSnackbar(message) {
+    const snackbar = document.getElementById("snackbar");
+    snackbar.innerText = message;
+    snackbar.style.visibility = "visible";
+    setTimeout(() => {
+      snackbar.style.visibility = "hidden";
+    }, 2000);
+  }
+
+  // Filter functionality
+  function filterCards() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const cards = document.querySelectorAll('.card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardName = card.getAttribute('data-name');
+      const cardStatus = card.getAttribute('data-status');
+      
+      const matchesSearch = cardName.includes(searchTerm);
+      const matchesStatus = !statusFilter || cardStatus === statusFilter;
+      
+      if (matchesSearch && matchesStatus) {
+        card.style.display = 'block';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    // Update filter results display
+    const totalCards = cards.length;
+    document.getElementById('filterResults').textContent = 
+      `Showing ${visibleCount} of ${totalCards} reports`;
+  }
+
+  function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    filterCards();
+  }
+
+  // Add event listeners for filtering
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', filterCards);
+    }
+    if (statusFilter) {
+      statusFilter.addEventListener('change', filterCards);
+    }
+    
+    // Initialize filter results
+    filterCards();
+    
+    // Load image optimizer for better performance
+    const script = document.createElement('script');
+    script.src = "{{ url_for('static', filename='scripts/image_optimizer.js') }}";
+    script.onload = function() {
+      console.log('Image optimizer loaded successfully');
+    };
+    document.head.appendChild(script);
+  });
+</script>
+
+
+</div>
+</body>
+</html>

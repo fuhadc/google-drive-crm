@@ -1,0 +1,182 @@
+/* Image Optimization Styles */
+
+/* Image placeholder styles */
+.image-placeholder {
+    background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 12px;
+    font-weight: 500;
+    animation: placeholder-pulse 2s ease-in-out infinite;
+}
+
+@keyframes placeholder-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Image loading states */
+img[data-optimized] {
+    transition: opacity 0.3s ease-in-out, transform 0.2s ease-in-out;
+    opacity: 0;
+}
+
+img[data-optimized].loaded {
+    opacity: 1;
+}
+
+/* Progressive loading effect */
+img.progressive-loading {
+    filter: blur(5px);
+    transition: filter 0.3s ease-out;
+}
+
+img.progressive-loading.loaded {
+    filter: blur(0);
+}
+
+/* Full-size loaded indicator */
+img.full-size-loaded {
+    border: 2px solid #4CAF50;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+/* Lazy loading skeleton */
+.lazy-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Image grid optimizations */
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    padding: 20px;
+}
+
+.image-box {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.image-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.image-box img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-box:hover img {
+    transform: scale(1.05);
+}
+
+/* Loading spinner for images */
+.image-loading {
+    position: relative;
+}
+
+.image-loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive image optimizations */
+@media (max-width: 768px) {
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .image-box img {
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .image-box img {
+        height: 100px;
+    }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .image-placeholder {
+        background-size: 10px 10px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .image-placeholder {
+        background: linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
+                    linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, #2a2a2a 75%), 
+                    linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+        color: #ccc;
+    }
+    
+    .lazy-skeleton {
+        background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    }
+}
+
+/* Print optimizations */
+@media print {
+    .image-placeholder,
+    .lazy-skeleton {
+        display: none;
+    }
+    
+    img {
+        break-inside: avoid;
+        max-width: 100%;
+        height: auto;
+    }
+}
+

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payments Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="container mt-5">
+    <h2 class="mb-4">Credited Payments</h2>
+ <table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Address</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for payment in payments %}
+    <tr>
+      <td>{{ payment.name }}</td>
+      <td>{{ payment.email }}</td>
+      <td>{{ payment.amount }}</td>
+      <td>{{ payment.payment_status }}</td>
+      <td>{{ payment.address }}</td>
+      <td>
+        <form action="/generate_invoice/{{ payment.id }}" method="post">
+          <button class="btn btn-primary btn-sm">Generate Invoice</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Thermal Report</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: white;
+    }
+
+    .page {
+      page-break-after: always;
+      width: 210mm;
+      height: 297mm;
+      position: relative;
+      box-sizing: border-box;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      width: 100%;
+      text-align: center;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
+
+    .header img,
+    .footer img {
+      width: 100%;
+      max-height: 153px;
+    }
+
+    .logo-block img {
+      display: block;
+      margin: -119px auto 70px auto;
+      height: 95px;
+    }
+
+    .thirty-seventy {
+      padding: 0 25px;
+    }
+
+    .notes-box-thermal-image {
+      width: 30%;
+      float: left;
+    }
+
+    .img-box-thermal-image {
+      width: 70%;
+      float: right;
+    }
+
+    .thirty-seventy::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+
+    .notes {
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .image-block {
+      text-align: center;
+    }
+
+    .image-block img {
+      width: auto;
+      height: 330px;
+      margin: 0 auto 20px auto;
+      display: block;
+    }
+
+    .icon-block img {
+      display: block;
+      margin: 0px 73px -159px auto;
+      max-height: 184px !important;
+      width: auto;
+      position: relative;
+      top: 160px;
+      z-index: 1;
+      float: right;
+    }
+
+    .address {
+      bottom: 0;
+      padding: 0px 20px;
+      padding-right: 400px;
+      font-size: 12px;
+      text-align: left;
+      display: block;
+      position: absolute;
+      z-index: 10;
+      margin: 0px 0px 69px auto;
+    }
+    .li-spacer li{
+      margin-bottom: 10px;
+    }
+
+    .pdf-padding{
+      padding-top: 0px !important;
+      padding-left: 50px !important;
+      padding-right: 50px !important;
+    }
+
+    .heading-txt h2{
+      text-align: center;
+    }
+
+    .heading-txt h3{
+      text-align: center;
+    }
+
+    .heading-txt h4{
+      text-align: center;
+    }
+
+    mark{
+      background-color: yellow;
+      padding: 0.1em 0.2em;
+    }
+
+    @media print {
+      html, body {
+        background: white;
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+{% if 'page_a' in extra_page %}
+<div class="page">
+  <div class="header">
+    <img src="{{ header_path }}">
+  </div>
+  <div class="logo-block">
+    <img src="{{ logo_path }}">
+  </div>
+<div class="pdf-padding" style="padding: 20px
+; font-size: 16px; margin-top: -50px;">
+  {% if page_a_data %}
+  <div style="margin-top: -50px; width: 100%;">
+  <p style="text-align: right;"><strong>Report Number:</strong> {{ page_a_data.report_number }}</p><br>
+  </div>
+  <div style="width: 100%; float: left;">
+  <p><strong>Client Name:</strong> {{ page_a_data.client_name }}</p>
+  </div>
+  <div style="width: 100%; float: left;">
+  <p><strong>Client Address:</strong> {{ page_a_data.client_address }}</p>
+  </div>
+  <div style="width: 50%; float: left;">
+  <p><strong>Email:</strong> {{ page_a_data.email }}</p>
+  </div>
+  <div style="width: 50%; float: left;">
+  <p><strong>Phone:</strong> {{ page_a_data.phone }}</p>
+  </div>
+  <div style="width: 50%; float: left;">
+  <p><strong>Date:</strong> {{ page_a_data.date }}</p>
+  </div>
+  <div style="width: 50%; float: left;">
+  <p><strong>Survey Date:</strong> {{ page_a_data.survey_date }}</p>
+  </div>
+  <div style="width: 100%; float: left;">
+  <p><strong>Findings:</strong> {{ page_a_data.findings | safe }}</p>
+  </div>
+  <div style="width: 100%; float: left;">
+  <p><strong>Requirement:</strong> {{ page_a_data.requirement | safe }}</p>
+  </div>
+  <div style=" width: 50%; float: left;">
+    <p><strong>Surveyor Name:</strong> {{ page_a_data.surveyor_name }}</p>
+  </div>
+  <div style=" width: 50%; float: right;">
+    <p><strong>Prepared By:</strong> {{ page_a_data.prepared_by }}</p> 
+  </div> 
+  <div>
+    <p style="font-weight: bold; float: left;">Dear customers, request you to share any kind of feedback or clarification within 2 days, from the date of report submitted.</p>
+    <p style="font-weight: bold; float: left;">Wet2Dry Waterproofing aims to build healthy living environments for every individual with this process.</p>      
+  </div>
+    {% endif %}
+</div>
+  <div class="address">
+    <strong>Wet2Dry Solutions Pvt Ltd</strong><br>
+    <strong>Website:</strong> Wet2drysolution.com<br>
+    <strong>Email Id:</strong> wet2drysolution@gmail.com<br>
+    <strong>Phone Number:</strong> +919130031613<br>
+    <strong>Site Address:</strong> {{ branch_address }}
+  </div>
+  <div class="footer">
+    <div class="icon-block">
+      <img src="{{ icon_path }}">
+    </div>
+    <img src="{{ footer_path }}">
+  </div>
+</div>
+
+{% if 'page_b' in extra_page %}
+  <div class="page">
+    <div class="header">
+      <img src="{{ header_path }}">
+    </div>
+    <div class="logo-block">
+      <img src="{{ logo_path }}">
+    </div>
+    <div class="pdf-padding" style="padding: 20px; font-size: 16px; margin-top: -25px;">
+      <div class="li-spacer">
+      <ul>
+        <li>Thermal imaging scanning been carried out in the respective flat /flat’s /Societies/Company etc. mentioned in our report and Restorative process efficiently and effectively with the knowledge of sanitary seepage, plumbing proficiency, components and materials, as well as acknowledged standards and reference guides for sanitary seepage restoration.</li>
+        <li>Process of scanning - using infrared cameras and we investigate if certain areas are causing leakage/seepage if ‘Damp’ or ‘not Damp’, and to trace the root cause. Shaping the cause of loss or point of entry, identifying and rectifying the areas where ever it’s Wet or not wet’ and allows us for focus on what treatment is suitable as we are specialized in internal sanitary seepage.</li>
+        <li>Where most necessary, and once calculable, ongoing monitoring helps us ensure the damp and moist areas are drying properly or not as our treatment requires 90 days of natural curing with minimum breakage of assets installed in the restrooms/washrooms and toilets.</li>
+        <li>By tracking the water from its primary source, industriously following it in everywhere.</li>
+        <li>With this methodical and proven approach we first identify and solve the water disturbance problems in order to prevent additional water interruption or future damage to the walls at skirting level and neighbor flats. The source of the seepage infringement can vary from failures in fittings or plumbing, to building defects, rising</li>
+        <li>Damp, weather changes or seepage, leaking ceilings, damp walls or adjacent flat sanitary seepage detection.</li>
+        <li>The Results are achieved based on the survey done using Advance Thermal Imaging Cameras.</li>
+        <li>Interference and tracing the leak back to its primary source without tampering the areas.</li>
+        <li>Thermal Cameras - Infrared thermal cameras which help save time and can be kept as reference to tally images before and after the treatment.</li>
+        <li>Describe temperature differentials and provide a scientific report of areas which suspected moisture interruption. However, temperature differentials may not always be moist as related to the outside temperature and may also change as per the usage of the washrooms (like washrooms used on daily basis or used rarely).</li>
+        <li>Direction it has extended, we establish a precise and defined picture of the extent of the damage. An understanding of the types of affected materials.</li>
+        <li>Their porosity, the extent of the water absorption, as well as an understanding of capillary movement, will provide the customer for the perfect solution.</li>
+      </ul>
+      </div>
+    </div>
+    <div class="address">
+      <strong>Wet2Dry Solutions Pvt Ltd</strong><br>
+      <strong>Website:</strong> Wet2drysolution.com<br>
+      <strong>Email Id:</strong> wet2drysolution@gmail.com<br>
+      <strong>Phone Number:</strong> +919130031613<br>
+      <strong>Site Address:</strong> {{ branch_address }}
+    </div>
+    <div class="footer">
+      <div class="icon-block">
+        <img src="{{ icon_path }}">
+      </div>
+      <img src="{{ footer_path }}">
+    </div>
+  </div>
+{% endif %}
+{% endif %}
+
+<!-- rest of your template here... -->
+{% for pair in image_pairs %}
+<div class="page">
+  <div class="header">
+    <img src="{{ header_path }}">
+  </div>
+  <div class="logo-block">
+    <img src="{{ logo_path }}">
+  </div>
+  <div class="thirty-seventy">
+    <div class="notes-box-thermal-image">
+      {% if pair.notes %}
+      <div class="notes">{{ pair.notes }}</div>
+      {% endif %}
+    </div>
+    <div class="img-box-thermal-image">
+      <div class="image-block image-pair">
+        {% if pair.thermal %}
+        <img src="{{ pair.thermal }}">
+        {% endif %}
+        {% if pair.normal %}
+        <img src="{{ pair.normal }}">
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="address">
+    <strong>Wet2Dry Solutions Pvt Ltd</strong><br>
+    <strong>Website:</strong> Wet2drysolution.com<br>
+    <strong>Email Id:</strong> wet2drysolution@gmail.com<br>
+    <strong>Phone Number:</strong> +919130031613<br>
+    <strong>Site Address:</strong> {{ branch_address }}
+  </div>
+  <div class="footer">
+    <div class="icon-block">
+      <img src="{{ icon_path }}">
+    </div>
+    <img src="{{ footer_path }}">
+  </div>
+</div>
+{% endfor %}
+
+{# ➤ Render Page C after image pairs if selected #}
+{% for page in extra_page %}
+  {% if page == 'page_c' %}
+  <div class="page">
+    <div class="header">
+      <img src="{{ header_path }}">
+    </div>
+    <div class="logo-block">
+      <img src="{{ logo_path }}">
+    </div>
+    <div class="pdf-padding" style="padding: 20px; font-size: 16px; margin-top: -25px;">
+      <div class="heading-txt">
+        <h2>Our Recommendations:</h2>
+      </div>
+      <p>Based on the following report we recommend that immediate action be taken on the critical problems.</p>
+      <p>Following Recommendations are given to arrest the seepage:</p>
+      <div class="li-spacer">
+      <ol>
+        <li>All outlets needed to be water tightened.</li>
+        <li>Water tightening in WC.</li>
+        <li>Waste outlets needed to be gravity test.</li>
+        <li>Accumulated water needs to be drain out.</li>
+        <li>Existing joints of tiles to be raked open and cleaned thoroughly for all the loose particles, oil, grease etc.</li>
+        <li>Filling the joints with white cement adding URP Chemical.</li>
+      </ol>
+      <div style="padding-left: 20px; padding-right: 20px;">
+      <ul>
+        <li><mark> Dear customers, request you to share any kind of feedback or clarification within 2 to 3 days, from the date of quotation submitted.</mark></li>
+        <li>Office is open on all days, except Sunday.</li>
+      </ul>
+      <ul>
+        <li>Index - Understanding the imaging / examine the colour code in Thermal Images in the report.</li>
+        <li>Report for Dampness / water accumulation levels.</li>
+        <li>Calibration can be measured:</li>
+        <ul>
+          <li>Orange: Dry & low pigmentation of water.</li>
+          <li>Violet - Very High Pigmentation of Water</li>
+        </ul>
+      </ul>
+      </div>
+      </div>
+    </div>
+    <div class="address">
+      <strong>Wet2Dry Solutions Pvt Ltd</strong><br>
+      <strong>Website:</strong> Wet2drysolution.com<br>
+      <strong>Email Id:</strong> wet2drysolution@gmail.com<br>
+      <strong>Phone Number:</strong> +919130031613<br>
+      <strong>Site Address:</strong> {{ branch_address }}
+    </div>
+    <div class="footer">
+      <div class="icon-block">
+        <img src="{{ icon_path }}">
+      </div>
+      <img src="{{ footer_path }}">
+    </div>
+  </div>
+  
+
+ {% elif page == 'page_d' %}
+    <!-- ✅ New Page D -->
+    <div class="page">
+      <div class="header">
+        <img src="{{ header_path }}">
+      </div>
+      <div class="logo-block">
+        <img src="{{ logo_path }}">
+      </div>
+    <div class="pdf-padding" style="padding: 20px; font-size: 16px; margin-top: -25px;">
+      <div class="heading-txt">
+        <h2>Process of Work</h2>
+        <h2>Water-tightening treatment</h2>
+        <h4>What is water-tightening?</h4>
+      </div>
+      <p style="font-weight: bold;">We can enlighten our customers in a very simple way, water-tightening is a process, where we thoroughly check all the points in a washroom / kitchen etc. which leads to wall dampness and seepages. Sanitary seepage is due to multiple issues and needs to be attended asap before it damages your house. We have a unique solution called water-tightening as mentioned below.</p>
+      <p>As per the Thermography scanning, the images <mark>(Normal & Thermal)</mark> will be shared along with the quotation which would be marked & indicated if there is any sanitary seepage. Pigmentation seen in purple colour shows water / moisture accumulation in those respective areas.</p>
+      <div class="li-spacer">
+      <ol>
+        <li> All drain outlets are rectified and water tightening process in done in all washrooms / Kitchen /Balcony & Dry Balcony ( as per the survey feedback)</li>
+        <li> Our process is done on surface area which includes 80% Mechanical and 20% Chemical process.</li>
+        <li> A 4-to-5-inch slit is made at the threshold of the washroom entrance, where we place a High Speed impactor to blow out the excess moisture and chemical treatment is done there for precaution, duration of keeping the impactor is as per the moisture collected below the tiles. (Anti-skid Black or white tiles will be replaced).</li>
+        <li> Checking of concealed piping in washrooms by pressure testing is done in every flat to ensure if there is no crack or pipe break, this only can be done if there is an independent valve outside each washroom .</li>
+        <li> Gravity testing is done to ensure if there is no leakage in the washbasin and W/C (water closet checking also is done to see if there is any multiple sources of sanitary seepage due to which water gets accumulated in the sunk).</li>
+        <li> We have marked the points in the images where the process needs to be done.</li>
+      </ol>
+      </div>
+      <p>Duration: - Each washroom 1 day and next day can be used after the chemical washing is done. Total Days to complete the work 3-4 days.</p>
+    </div>
+      <div class="address">
+        <strong>Wet2Dry Solutions Pvt Ltd</strong><br>
+        <strong>Website:</strong> Wet2drysolution.com<br>
+        <strong>Email Id:</strong> wet2drysolution@gmail.com<br>
+        <strong>Phone Number:</strong> +919130031613<br>
+        <strong>Site Address:</strong> {{ branch_address }}
+      </div>
+      <div class="footer">
+        <div class="icon-block">
+          <img src="{{ icon_path }}">
+        </div>
+        <img src="{{ footer_path }}">
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}  
+
+
+</body>
+</html>

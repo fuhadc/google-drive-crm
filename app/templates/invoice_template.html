@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Thermal Report</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: white;
+    }
+
+    .page {
+      page-break-after: always;
+      width: 210mm;
+      height: 297mm;
+      position: relative;
+      box-sizing: border-box;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      width: 100%;
+      text-align: center;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
+
+    .header img,
+    .footer img {
+      width: 100%;
+      max-height: 153px;
+    }
+
+    .logo-block img {
+      display: block;
+      margin: -119px auto 70px auto;
+      height: 95px;
+    }
+
+    .thirty-seventy {
+      padding: 0 25px;
+    }
+
+    .notes-box-thermal-image {
+      width: 30%;
+      float: left;
+    }
+
+    .img-box-thermal-image {
+      width: 70%;
+      float: right;
+    }
+
+    .thirty-seventy::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+
+    .notes {
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .image-block {
+      text-align: center;
+    }
+
+    .image-block img {
+      width: auto;
+      height: 330px;
+      margin: 0 auto 20px auto;
+      display: block;
+    }
+
+    .icon-block img {
+      display: block;
+      margin: 0px 73px -159px auto;
+      max-height: 184px !important;
+      width: auto;
+      position: relative;
+      top: 160px;
+      z-index: 1;
+      float: right;
+    }
+
+    .address {
+      bottom: 0;
+      padding: 5px 20px;
+      font-size: 12px;
+      text-align: left;
+      display: block;
+      position: absolute;
+      z-index: 10;
+      margin: 0px 0px 69px auto;
+    }
+    
+    .li-spacer li{
+      margin-bottom: 10px;
+    }
+
+    .pdf-padding{
+      padding-left: 50px !important;
+      padding-right: 50px !important;
+    }
+
+    .heading-txt h2{
+      text-align: center;
+    }
+    
+    mark{
+    background-color: yellow;
+    padding: 0.1em 0.2em;
+    }
+    
+
+    table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px auto;
+  font-size: 14px;
+}
+
+th, td {
+  border: 1px solid #444;
+  padding: 12px;
+  text-align: left;
+}
+
+thead tr {
+  background-color: #2272ff;
+  color: white;
+}
+
+caption {
+  caption-side: bottom;
+  padding: 10px;
+  font-weight: bold;
+}
+
+thead {
+  color: white;
+}
+
+tfoot {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+tbody tr:nth-of-type(even) {
+  background-color: #f9f9f9;
+}
+
+td:last-of-type {
+  text-align: center;
+}
+
+tfoot th {
+  text-align: right;
+}
+
+tfoot td {
+  font-weight: bold;
+}
+
+.table-enter{
+  margin-left: auto;
+  margin-right: auto;
+}
+
+    @media print {
+      html, body {
+        background: white;
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+    <div class="page">
+  <div class="header">
+    <img src="{{ header_path }}">
+  </div>
+  <div class="logo-block">
+    <img src="{{ logo_path }}">
+  </div>
+
+<div class="pdf-padding" style="padding: 20px; font-size: 16px; margin-top: -70px !important;">    
+    <h2 style="text-align:center;">INVOICE</h2>
+  <div style="width: 50%; float: left;">
+    <h3>Bill To</h3>
+    <p><strong>Name:</strong> {{ payment.name }}</p>
+    <p><strong>Email:</strong> {{ payment.email }}</p>
+    <p><strong>Phone:</strong> {{ payment.phone }}</p> 
+  </div>  
+  <div style="width: 50%; float: right;">
+    <h3>Invoice Number: 243424</h3>
+    <p><strong>Invoice date:</strong> {{ payment.created_at[:10] }}</p>
+  </div>
+  <div style="width: 100%;">
+    <p><strong>Address:</strong> {{ address }}</p>
+  </div>
+  <div style="width: 100%;">
+<table>
+  <thead>
+    <tr>
+      <th >Sr No.</th>
+      <th>Description</th>
+      <th>Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Charges for Site survey, Thermographic scanning process and report</td>
+      <td>₹{{ payment.base_amount | inr }}/-</td>
+    </tr>
+    <tr>
+      <th scope="row" colspan="2">GST (18%) 27AABCW8219R1ZJ</td>
+      <td>₹{{ payment.gst_amount | inr }}/-</th>
+    </tr>
+    <tr>
+      <th scope="row" colspan="2"><strong>Total</strong></th>
+      <td><strong>₹{{ payment.amount | inr }}/-</strong></td>
+    </tr>
+  </tbody>
+</table>
+  </div> 
+  <div style="width: 100%;">
+    <p><strong>Amount in Words:</strong> {{ payment.amount_words }}</p>
+  </div>
+  <div style="width: 100%;">
+    <p><strong>The Thermography Scanning includes:</strong></p>
+    <p>1. Thermography imaging</p>
+    <p>2. Report</p>
+    <p>3. Quotation</p>
+    <p>The images along with the report and quotation would be sent on your registered mail id and WhatsApp within 3-4 working days.</p>
+  </div> 
+  <div style="width: 50%; float: left;">
+    <p>For <strong>Wet2dry Solutions PVT LTD,</strong></p>
+    <p><strong>Authorized Signatory</strong></p>
+  </div>
+  <div style="width: 50%; float: right;">
+    <p><strong>Authorized Signatory</strong></p>
+  </div>
+</div>     
+
+  <div class="address">
+    <strong>Wet2Dry Solutions Pvt Ltd</strong><br>
+    <strong>Website:</strong> Wet2drysolution.com<br>
+    <strong>Email Id:</strong> wet2drysolution@gmail.com<br>
+    <strong>Phone Number:</strong> +919130031613<br>
+    <strong>Site Address:</strong> Pune
+  </div>
+  <div class="footer">
+    <div class="icon-block">
+      <img src="{{ icon_path }}">
+    </div>
+    <img src="{{ footer_path }}">
+  </div>
+</div>

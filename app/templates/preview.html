@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📷 Preview Images</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/image_optimizer.css') }}">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .image-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+    }
+    .image-box {
+      position: relative;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 5px;
+      background: white;
+    }
+    .image-box img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+    .image-box input[type="checkbox"] {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      transform: scale(1.3);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .modal img {
+      max-width: 90%;
+      max-height: 90%;
+    }
+    .modal:target {
+      display: flex;
+    }
+    
+    /* Enhanced modal styling for report category */
+    #reportCategoryModal {
+      background: rgba(0, 0, 0, 0.9);
+    }
+    
+    #reportCategoryModal > div {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 2px solid #007bff;
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .actions {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .actions button {
+      padding: 10px 20px;
+      margin: 0 10px;
+      font-size: 16px;
+    }
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🖼️ Preview: {{ file_id }}</h2>
+
+  <!-- Report Processing Status Display Section -->
+  <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center;">
+    <h3 style="margin-top: 0; color: #333;">📊 Report Processing Status</h3>
+    <p style="font-size: 18px; margin: 10px 0;">
+      Report Category: <strong id="currentStatusDisplay" style="color: {% if current_status == 'new survey report' %}#28a745{% else %}#007bff{% endif %};">{{ current_status }}</strong>
+    </p>
+    
+    <button onclick="showReportCategoryModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-top: 10px;">Change Report Category</button>
+  </div>
+
+  <div class="actions">
+    <button id="generateBtn" onclick="startIRGeneration('{{ file_id }}')">⚙️ Generate IR Images</button>
+    <p id="loadingText" style="display:none; color: green;">⏳ IR Image Generation in Progress...</p>
+    <div id="loading" style="display:none; margin-top:10px;">
+      🔄 Generating IR images... please wait do not refresh or close the page
+    </div>
+    
+
+    
+    <!-- Cleanup Status Display -->
+    <div id="cleanupStatus" style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: left; display: none;">
+      <h4 style="margin: 0 0 10px 0; color: #155724;">📊 Cleanup Status</h4>
+      <div id="cleanupStatusContent">
+        <p style="margin: 0; color: #155724; font-size: 14px;">
+          <strong>Status:</strong> <span id="cleanupStatusText">Checking...</span><br>
+          <strong>Total Images:</strong> <span id="totalImages">-</span><br>
+          <strong>Processed Images:</strong> <span id="processedImages">-</span><br>
+          <strong>Backup Images:</strong> <span id="backupImages">-</span>
+        </p>
+      </div>
+    </div>
+    
+    <!-- Check Cleanup Status Button -->
+    <button id="checkCleanupBtn" onclick="checkCleanupStatus('{{ file_id }}')" style="margin-top: 15px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+      🔍 Check Cleanup Status
+    </button>
+  </div>
+  <div id="progressContainer" style="display:none;">
+    <p>Processing Images: <span id="progressTime">0</span>s / <span id="progressTotal">0</span>s</p>
+    <p id="cleanupProgressText" style="display:none; color: #ffc107; font-weight: bold;">🧹 Cleaning up backup images...</p>
+    <div style="width: 100%; background: #ddd; border-radius: 5px; overflow: hidden;">
+      <div id="progressBar" style="width: 0%; height: 20px; background: #4caf50;"></div>
+    </div>
+  </div>
+
+  <form method="POST" action="/delete/{{ file_id }}">
+    <div class="image-grid">
+      {% for image in images %}
+      <div class="image-box">
+        <input type="checkbox" name="images" value="{{ image }}">
+        <img src="{{ url_for('google_drive.serve_thumbnail', filename=file_id + '/' + image) }}?size=150x150&v={{ image_versions[image] }}" 
+             data-full-size="{{ url_for('google_drive.serve_unzipped_image', filename=file_id + '/' + image) }}?v={{ image_versions[image] }}"
+             onclick="openModal('{{ image }}')"
+             loading="lazy"
+             alt="{{ image }}">
+      </div>
+      {% endfor %}
+    </div>
+    <div class="actions">
+      <button type="submit">🗑️ Delete Selected</button>
+    </div>
+  </form>
+
+  <div id="imageModal" class="modal" onclick="closeModal()">
+    <img id="modalImg" src="">
+  </div>
+
+  <!-- Report Category Selection Modal -->
+  <div id="reportCategoryModal" class="modal" style="display: none;">
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; text-align: center; position: relative;">
+      <h3 style="margin-top: 0; color: #333; margin-bottom: 20px;">📊 Report Category Selection</h3>
+      <p style="margin-bottom: 25px; color: #666; font-size: 16px;">Please select the appropriate category for this report. This selection is required to proceed.</p>
+      
+      <div style="margin-bottom: 25px;">
+        <label style="display: block; margin-bottom: 10px; font-weight: bold; color: #333; font-size: 16px;">Report Category:</label>
+        <select id="reportCategorySelect" style="padding: 12px 16px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; width: 100%; max-width: 300px; background: white;">
+          <option value="new survey report">🆕 New Survey Report</option>
+          <option value="Re-survey report">🔄 Re-survey Report</option>
+        </select>
+      </div>
+      
+      <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <button onclick="updateReportCategory()" style="padding: 12px 24px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; min-width: 140px;">✅ Confirm Selection</button>
+        <button onclick="closeReportCategoryModal()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; min-width: 140px;">Cancel</button>
+      </div>
+      
+      <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+        <p style="margin: 0; color: #495057; font-size: 14px;">
+          <strong>Note:</strong> New Survey Reports can generate IR images, while Re-survey Reports are for review purposes only.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {% if txt_file %}
+  <div style="margin-top: 30px;">
+    <h3>📄 Notes File: {{ txt_file }}</h3>
+    <textarea rows="10" cols="80" readonly style="resize:none; padding:10px; background:#f9f9f9; border:1px solid #ccc;">{{ txt_content }}</textarea>
+    <br>
+  </div>
+  {% endif %}
+
+  <div style="text-align: center; margin-top: 20px;">
+    <form action="/edit_report/{{ file_id }}" method="get">
+      <button type="submit" style="padding: 10px 20px; font-size: 16px;">✏️ Review & Edit Notes Before PDF</button>
+    </form>
+  </div>
+
+  <a href="/dashboard" class="back">⬅️ Return to Dashboard</a>
+
+<script>
+  // Global variable to store current report status
+  let currentReportStatus = '{{ current_status }}';
+  
+  // Show report category modal on page load
+  window.addEventListener('load', function() {
+    // Always show the modal on page load to allow category selection
+    showReportCategoryModal();
+    // Update button states after showing modal
+    updateButtonStates();
+  });
+
+  function openModal(src) {
+    const versionMap = {{ image_versions | tojson }};
+    const version = versionMap[src] || Date.now();
+    document.getElementById('modalImg').src = "{{ url_for('google_drive.serve_unzipped_image', filename=file_id + '/') }}" + src + "?v=" + version;
+    document.getElementById('imageModal').style.display = "flex";
+  }
+
+  function closeModal() {
+    document.getElementById('imageModal').style.display = "none";
+  }
+
+  let lastChecked = null;
+  document.querySelectorAll('input[type="checkbox"][name="images"]').forEach(checkbox => {
+    checkbox.addEventListener('click', function (e) {
+      const current = this;
+      const currentVal = current.value;
+      let imageNumber = parseInt(currentVal.match(/\d+/));
+      let pairedNumber = imageNumber % 2 === 0 ? imageNumber - 1 : imageNumber + 1;
+      const pairedImageName = currentVal.replace(/\d+/, String(pairedNumber).padStart(4, '0'));
+      const pairedCheckbox = Array.from(document.querySelectorAll('input[name="images"]')).find(cb =>
+        cb.value.includes(pairedImageName));
+      if (pairedCheckbox) pairedCheckbox.checked = current.checked;
+      if (!lastChecked) {
+        lastChecked = current;
+        return;
+      }
+      if (e.shiftKey) {
+        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"][name="images"]'));
+        const start = checkboxes.indexOf(current);
+        const end = checkboxes.indexOf(lastChecked);
+        const [min, max] = [Math.min(start, end), Math.max(start, end)];
+        checkboxes.slice(min, max + 1).forEach(cb => cb.checked = true);
+      }
+      lastChecked = current;
+    });
+  });
+
+  let progressInterval;
+  function startIRGeneration(file_id) {
+    event.preventDefault();
+    document.getElementById("generateBtn").disabled = true;
+    document.getElementById("loadingText").style.display = "block";
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("progressContainer").style.display = "block";
+
+    fetch(`/generate_ir_async/${file_id}`, {
+      method: "POST"
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "queued") {
+        waitForIRStart(file_id);
+      } else {
+        alert("Failed to start IR generation.");
+        resetProgressUI();
+      }
+    })
+    .catch(err => {
+      console.error("Error:", err);
+      resetProgressUI();
+    });
+  }
+
+  function runProgressBar(totalSeconds) {
+    let elapsed = 0;
+    progressInterval = setInterval(() => {
+      elapsed++;
+      const percent = Math.min((elapsed / totalSeconds) * 100, 100);
+      document.getElementById("progressTime").textContent = elapsed;
+      document.getElementById("progressBar").style.width = percent + "%";
+      if (elapsed >= totalSeconds) {
+        clearInterval(progressInterval);
+        // Progress bar completed, but keep it running for cleanup phase
+        runCleanupProgressBar();
+      }
+    }, 1000);
+  }
+
+  function runCleanupProgressBar() {
+    // Show cleanup progress text
+    document.getElementById("cleanupProgressText").style.display = "block";
+    
+    // Continue progress bar for cleanup phase
+    let cleanupElapsed = 0;
+    const cleanupInterval = setInterval(() => {
+      cleanupElapsed++;
+      // Show cleanup progress (indeterminate progress)
+      const progressBar = document.getElementById("progressBar");
+      progressBar.style.background = "#ffc107"; // Change to warning color
+      progressBar.style.width = "100%";
+      
+      // Animate progress bar during cleanup
+      if (cleanupElapsed % 2 === 0) {
+        progressBar.style.opacity = "0.7";
+      } else {
+        progressBar.style.opacity = "1";
+      }
+    }, 500);
+    
+    // Store cleanup interval for cleanup
+    window.cleanupProgressInterval = cleanupInterval;
+  }
+
+  function checkProgress(file_id) {
+    const checkInterval = setInterval(() => {
+      fetch(`/check_ir_status/${file_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.done) {
+            clearInterval(checkInterval);
+            clearInterval(progressInterval);
+            // Wait for cleanup to complete before reloading
+            waitForCleanupComplete(file_id);
+          }
+        });
+    }, 3000);
+  }
+
+  function waitForCleanupComplete(file_id) {
+    const cleanupCheckInterval = setInterval(() => {
+      fetch(`/check_cleanup_status/${file_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            console.error("Error checking cleanup:", data.error);
+            clearInterval(cleanupCheckInterval);
+            location.reload();
+            return;
+          }
+          
+          if (data.cleanup_done) {
+            clearInterval(cleanupCheckInterval);
+            // Clear cleanup progress interval if it exists
+            if (window.cleanupProgressInterval) {
+              clearInterval(window.cleanupProgressInterval);
+            }
+            // Show cleanup completion message
+            document.getElementById("loadingText").innerHTML = "✅ IR Generation Complete! Cleanup finished.";
+            document.getElementById("loadingText").style.color = "#28a745";
+            
+            // Wait a moment to show completion message, then reload
+            setTimeout(() => {
+              location.reload();
+            }, 2000);
+          } else {
+            // Update progress text to show cleanup is in progress
+            document.getElementById("loadingText").innerHTML = "🧹 Cleaning up original images...";
+            document.getElementById("loadingText").style.color = "#ffc107";
+          }
+        })
+        .catch(err => {
+          console.error("Error checking cleanup status:", err);
+          clearInterval(cleanupCheckInterval);
+          location.reload();
+        });
+    }, 2000); // Check cleanup status every 2 seconds
+  }
+
+  function resetProgressUI() {
+    document.getElementById("generateBtn").disabled = false;
+    document.getElementById("loadingText").style.display = "none";
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("progressContainer").style.display = "none";
+    document.getElementById("cleanupProgressText").style.display = "none";
+    clearInterval(progressInterval);
+    
+    // Clear cleanup progress interval if it exists
+    if (window.cleanupProgressInterval) {
+      clearInterval(window.cleanupProgressInterval);
+    }
+  }
+  function waitForIRStart(file_id) {
+  const checkStart = setInterval(() => {
+    fetch(`/check_ir_start/${file_id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.started) {
+          clearInterval(checkStart);
+          const totalTime = data.processing_time;
+          document.getElementById("progressTotal").textContent = totalTime;
+          runProgressBar(totalTime);
+          checkProgress(file_id);
+        }
+      });
+  }, 2000);
+}
+
+     function checkCleanupStatus(file_id) {
+     // Show the cleanup status section
+     document.getElementById('cleanupStatus').style.display = 'block';
+     
+     // Update status text to show checking
+     document.getElementById('cleanupStatusText').textContent = 'Checking...';
+     
+     fetch(`/check_cleanup_status/${file_id}`)
+       .then(res => res.json())
+       .then(data => {
+         if (data.error) {
+           document.getElementById('cleanupStatusText').textContent = 'Error: ' + data.error;
+           return;
+         }
+         
+         // Update the status display
+         document.getElementById('totalImages').textContent = data.total_images;
+         document.getElementById('processedImages').textContent = data.processed_images;
+         document.getElementById('backupImages').textContent = data.backup_images;
+         
+         if (data.cleanup_done) {
+           document.getElementById('cleanupStatusText').textContent = 'Completed';
+           document.getElementById('cleanupStatus').style.background = '#d4edda';
+           document.getElementById('cleanupStatus').style.borderColor = '#c3e6cb';
+         } else {
+           document.getElementById('cleanupStatusText').textContent = 'Pending';
+           document.getElementById('cleanupStatus').style.background = '#fff3cd';
+           document.getElementById('cleanupStatus').style.borderColor = '#ffeaa7';
+         }
+       })
+       .catch(err => {
+         console.error("Error checking cleanup status:", err);
+         document.getElementById('cleanupStatusText').textContent = 'Error checking status';
+       });
+   }
+
+   // Report Category Modal Functions
+   function showReportCategoryModal() {
+     document.getElementById('reportCategoryModal').style.display = 'flex';
+     // Set the current value in the select
+     const selectElement = document.getElementById('reportCategorySelect');
+     selectElement.value = currentReportStatus;
+     
+     // Focus on the select element for better UX
+     setTimeout(() => {
+       selectElement.focus();
+     }, 100);
+   }
+
+   function closeReportCategoryModal() {
+     document.getElementById('reportCategoryModal').style.display = 'none';
+   }
+
+   // Prevent modal from closing when clicking on the modal content
+   document.addEventListener('DOMContentLoaded', function() {
+     const modalContent = document.querySelector('#reportCategoryModal > div');
+     const modalBackdrop = document.getElementById('reportCategoryModal');
+     
+     if (modalContent) {
+       modalContent.addEventListener('click', function(e) {
+         e.stopPropagation();
+       });
+     }
+     
+     // Allow closing by clicking on backdrop, but only after selection is made
+     if (modalBackdrop) {
+       modalBackdrop.addEventListener('click', function(e) {
+         if (e.target === modalBackdrop) {
+           // Only allow closing if a category has been selected
+           if (currentReportStatus && currentReportStatus !== '') {
+             closeReportCategoryModal();
+           }
+         }
+       });
+     }
+   });
+
+   function updateReportCategory() {
+     const newStatus = document.getElementById('reportCategorySelect').value;
+     
+     // Update the global variable
+     currentReportStatus = newStatus;
+     
+     // Update the display
+     const statusDisplay = document.getElementById('currentStatusDisplay');
+     statusDisplay.textContent = newStatus;
+     
+     // Update color based on status
+     if (newStatus === 'new survey report') {
+       statusDisplay.style.color = '#28a745';
+     } else {
+       statusDisplay.style.color = '#007bff';
+     }
+     
+     // Update button states
+     updateButtonStates();
+     
+     // Close modal
+     closeReportCategoryModal();
+     
+     // Show success message
+     showSuccessMessage('Report category updated successfully!');
+     
+     // Send update to server
+     fetch('/update_report_processing_status', {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/x-www-form-urlencoded',
+       },
+       body: `file_id={{ file_id }}&status=${encodeURIComponent(newStatus)}`
+     })
+     .then(response => {
+       if (response.ok) {
+         console.log('Report status updated successfully');
+       } else {
+         console.error('Failed to update report status');
+         showErrorMessage('Failed to update report status. Please try again.');
+       }
+     })
+     .catch(error => {
+       console.error('Error updating report status:', error);
+       showErrorMessage('Error updating report status. Please try again.');
+     });
+   }
+
+   function updateButtonStates() {
+     const generateBtn = document.getElementById('generateBtn');
+     const checkCleanupBtn = document.getElementById('checkCleanupBtn');
+     
+     if (currentReportStatus === 'Re-survey report') {
+       // Disable buttons for Re-survey report
+       generateBtn.disabled = true;
+       generateBtn.style.opacity = '0.5';
+       generateBtn.style.cursor = 'not-allowed';
+       generateBtn.title = 'IR generation is not available for Re-survey reports';
+       
+       checkCleanupBtn.disabled = true;
+       checkCleanupBtn.style.opacity = '0.5';
+       checkCleanupBtn.style.cursor = 'not-allowed';
+       checkCleanupBtn.title = 'Cleanup status check is not available for Re-survey reports';
+     } else {
+       // Enable buttons for New Survey Report
+       generateBtn.disabled = false;
+       generateBtn.style.opacity = '1';
+       generateBtn.style.cursor = 'pointer';
+       generateBtn.title = '';
+       
+       checkCleanupBtn.disabled = false;
+       checkCleanupBtn.style.opacity = '1';
+       checkCleanupBtn.style.cursor = 'pointer';
+       checkCleanupBtn.title = '';
+     }
+   }
+
+   // Success and Error Message Functions
+   function showSuccessMessage(message) {
+     showMessage(message, 'success');
+   }
+
+   function showErrorMessage(message) {
+     showMessage(message, 'error');
+   }
+
+   function showMessage(message, type) {
+     const messageDiv = document.createElement('div');
+     messageDiv.style.cssText = `
+       position: fixed;
+       top: 20px;
+       right: 20px;
+       padding: 15px 20px;
+       border-radius: 8px;
+       color: white;
+       font-weight: bold;
+       z-index: 10000;
+       max-width: 300px;
+       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+     `;
+
+     if (type === 'success') {
+       messageDiv.style.background = '#28a745';
+     } else {
+       messageDiv.style.background = '#dc3545';
+     }
+
+     messageDiv.textContent = message;
+     document.body.appendChild(messageDiv);
+
+     setTimeout(() => {
+       if (messageDiv.parentNode) {
+         messageDiv.remove();
+       }
+     }, 3000);
+   }
+
+   // Initialize image optimizer for better performance
+   document.addEventListener('DOMContentLoaded', function() {
+     // Load the image optimizer script
+     const script = document.createElement('script');
+     script.src = "{{ url_for('static', filename='scripts/image_optimizer.js') }}";
+     script.onload = function() {
+       console.log('Image optimizer loaded successfully');
+     };
+     document.head.appendChild(script);
+   });
+
+</script>
+
+</body>
+</html>

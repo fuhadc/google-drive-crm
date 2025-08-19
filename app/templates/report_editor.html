@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📝 Edit Report Notes</title>
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f7f7f7; }
+    h2 { text-align: center; }
+    .pdf-style-page {
+      background: white; padding: 20px; margin-bottom: 40px; border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative;
+    }
+    .header img, .footer img { width: 100%; max-height: 153px; }
+    .logo-block img { display: block; margin: -119px auto 70px auto; height: 70px; }
+    .image-block { text-align: center; margin-top: 20px; }
+    .image-block img { width: auto; height: 300px; margin: 0 auto 20px auto; display: block; }
+    .address { padding: 10px 20px; font-size: 12px; text-align: left; margin-top: 10px; }
+    textarea {
+      width: 100%; height: 100px; resize: vertical; padding: 10px; font-size: 14px;
+      border: 1px solid #ccc; border-radius: 4px; margin-top: 20px;
+    }
+    .icon-block img {
+      display: block; margin: 0px 73px -159px auto; max-height: 184px !important;
+      width: auto; position: relative; top: 160px; z-index: 1; float: right;
+    }
+    .submit-btn { text-align: center; margin-top: 30px; }
+    .delete-btn {
+      position: absolute; top: 10px; right: 10px; background-color: red; color: white;
+      border: none; padding: 5px 10px; font-size: 14px; border-radius: 4px; cursor: pointer; z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <h2>📝 Edit Notes Before Generating PDF</h2>
+
+  
+
+  <form method="POST" action="/finalize_pdf/{{ file_id }}">
+    <input type="hidden" name="count" value="{{ image_pairs|length }}">
+     <!-- Branch/Report Address Dropdown (Site Address) -->
+<div class="pdf-style-page" data-nocard="1">
+  <label for="report_address"><strong>📍 Select Branch Address (Site Address):</strong></label>
+  <select name="report_address" id="report_address" required
+          style="width: 100%; padding: 10px; font-size: 14px;">
+    <option value="" disabled {% if not report_address %}selected{% endif %}>-- Select Address --</option>
+
+    <!-- ✅ Use the FULL address for comparison, since that's the option value -->
+    <option value="Plot No. 7, Road No. 9, Sector 12, New Panvel, Navi Mumbai, Maharashtra 410206"
+      {% if report_address == "Plot No. 7, Road No. 9, Sector 12, New Panvel, Navi Mumbai, Maharashtra 410206" %}selected{% endif %}>
+      Branch, Mumbai, MH
+    </option>
+
+    <option value="Block D 3, Shop no 6A Shubham heights 3rd floor B 308, office no 2 survey no 22/1, plot no B/1, Near Bharti hospital Pimple , Saudaghar, Pune, Maharashtra 411027"
+      {% if report_address == "Block D 3, Shop no 6A Shubham heights 3rd floor B 308, office no 2 survey no 22/1, plot no B/1, Near Bharti hospital Pimple , Saudaghar, Pune, Maharashtra 411027" %}selected{% endif %}>
+      Branch, Pune, MH
+    </option>
+
+    <option value="Ravindra. No 15.HBL Homes Behind Sai Krupa Apartment Laxminarayan Temple , Road Munnekolala, Marathahalli, Bengaluru, Karnataka 560037"
+      {% if report_address == "Ravindra. No 15.HBL Homes Behind Sai Krupa Apartment Laxminarayan Temple , Road Munnekolala, Marathahalli, Bengaluru, Karnataka 560037" %}selected{% endif %}>
+      Branch, Bengaluru, KA
+    </option>
+  </select>
+</div>
+
+    <!-- 🔥 Removed branch address dropdown block -->
+
+    {% for pair in image_pairs %}
+      {% set idx = loop.index0 %}
+      <div class="pdf-style-page" data-card="1">
+        <div class="header">
+          <img src="{{ url_for('static', filename='img/letterhead_assets/letterhead_header.png') }}">
+        </div>
+
+        <div class="logo-block">
+          <img src="{{ url_for('static', filename='img/logo/logo.png') }}">
+        </div>
+
+        <div class="image-block">
+         <img src="{{ url_for('google_drive.serve_unzipped_image', filename=file_id ~ '/' ~ pair.thermal) }}">
+         <img src="{{ url_for('google_drive.serve_unzipped_image', filename=file_id ~ '/' ~ pair.normal) }}">
+        </div>
+
+        <div class="address">
+          <strong>Wet2Dry Solutions Pvt Ltd</strong><br>
+          <strong>Website:</strong> Wet2drysolution.com<br>
+          <strong>Email Id:</strong> wet2drysolution@gmail.com<br>
+          <strong>Phone Number:</strong> +919130031613<br>
+          <strong>Client Address:</strong>
+          <span class="client-address-display">{{ (page_a_data.client_address or '') if page_a_data else '' }}</span>
+        </div>
+
+        <!-- hidden inputs for the pair -->
+        <input type="hidden" name="thermal_{{ idx }}" value="{{ pair.thermal }}">
+        <input type="hidden" name="normal_{{ idx }}" value="{{ pair.normal }}">
+
+        <div class="footer">
+          <div class="icon-block">
+            <img src="{{ url_for('static', filename='img/logo/icon.png') }}">
+          </div>
+          <img src="{{ url_for('static', filename='img/letterhead_assets/letterhead_footer.png') }}">
+        </div>
+
+        <input type="checkbox" class="multi-delete-checkbox" style="position:absolute; top:10px; left:10px; transform: scale(1.5);">
+        <textarea name="note_{{ idx }}">{{ pair.notes }}</textarea>
+        <button type="button" class="delete-btn" onclick="deleteCard(this)">🗑️ Delete</button>
+      </div>
+    {% endfor %}
+
+    <div class="form-group">
+      <label><strong>Select Extra Pages to Include:</strong></label><br>
+
+      <div>
+        <label>
+          <input type="checkbox" name="extra_page" value="page_a" id="page_a_cb"
+            {% if 'page_a' in selected_pages %}checked{% endif %}>
+          Customer Information
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" name="extra_page" value="page_b"
+            {% if 'page_b' in selected_pages %}checked{% endif %}>
+          Terms and conditions
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" name="extra_page" value="page_c"
+            {% if 'page_c' in selected_pages %}checked{% endif %}>
+          Recommendation
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" name="extra_page" value="page_d"
+            {% if 'page_d' in selected_pages %}checked{% endif %}>
+          Work Process
+        </label>
+      </div>
+    </div>
+
+    <!-- ✅ Page A: Client Details (only client address, no branch) -->
+    <div id="page_a_inputs" style="display: none; margin-top: 15px;">
+      <label>Report Number: <input type="text" name="page_a_report_number" value="{{ page_a_data.report_number or '' }}"></label><br>
+      <label>Client Name: <input type="text" name="page_a_client_name" value="{{ page_a_data.client_name or '' }}"></label><br>
+      <label>Client Address:
+        <textarea name="page_a_client_address" id="clientAddressInput" rows="2" placeholder="Client full address">{{ page_a_data.client_address or '' }}</textarea>
+      </label><br>
+      <label>Email: <input type="email" name="page_a_email" value="{{ page_a_data.email or '' }}"></label><br>
+      <label>Phone: <input type="text" name="page_a_phone" value="{{ page_a_data.phone or '' }}"></label><br>
+      <label>Date: <input type="date" name="page_a_date" value="{{ page_a_data.date or '' }}"></label><br>
+      <label>Survey Date: <input type="date" name="page_a_survey_date" value="{{ page_a_data.survey_date or '' }}"></label><br>
+
+      <label>Findings:</label>
+      <div id="findings-editor" style="height: 150px;"></div>
+      <input type="hidden" name="page_a_findings" id="findings-html">
+
+      <label>Requirement:</label>
+      <div id="requirement-editor" style="height: 150px;"></div>
+      <input type="hidden" name="page_a_requirement" id="requirement-html">
+
+      <label>Surveyor Name: <input type="text" name="page_a_surveyor_name" value="{{ page_a_data.surveyor_name or '' }}"></label><br>
+      <label>Prepared By: <input type="text" name="page_a_prepared_by" value="{{ page_a_data.prepared_by or '' }}"></label><br>
+    </div>
+
+    <div class="submit-btn">
+      <button type="submit">Generate Final Report PDF</button>
+      <div id="pdf-progress" style="margin-top: 15px; display: none;">
+        <div style="background: #ccc; width: 100%; height: 20px; border-radius: 5px;">
+          <div id="pdf-bar" style="width: 0%; height: 100%; background: #007bff; transition: width 0.3s;"></div>
+        </div>
+        <p style="text-align:center; margin-top:5px;">⏳ Generating PDF, please wait...</p>
+      </div>
+    </div>
+  </form>
+
+  <div class="submit-btn">
+    <button type="button" onclick="deleteSelectedCards()" style="background-color: red;">🗑️ Delete Selected</button>
+  </div>
+
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+<script>
+  // Safe guards (in case elements are missing)
+  const checkbox = document.getElementById('page_a_cb');
+  const extraInputs = document.getElementById('page_a_inputs');
+  function toggleInputs() {
+    if (!checkbox || !extraInputs) return;
+    extraInputs.style.display = checkbox.checked ? 'block' : 'none';
+  }
+  if (checkbox) {
+    checkbox.addEventListener('change', toggleInputs);
+    window.addEventListener('DOMContentLoaded', toggleInputs);
+  }
+
+  // Quill editors
+  var findingsQuill = new Quill('#findings-editor', { theme: 'snow' });
+  var requirementQuill = new Quill('#requirement-editor', { theme: 'snow' });
+  window.addEventListener('DOMContentLoaded', () => {
+    findingsQuill.root.innerHTML = {{ (page_a_data.findings or '') | tojson | safe }};
+    requirementQuill.root.innerHTML = {{ (page_a_data.requirement or '') | tojson | safe }};
+  });
+
+  // On submit, put HTML into hidden inputs + progress
+  document.querySelector('form').addEventListener('submit', function(e) {
+    document.querySelector('#findings-html').value = findingsQuill.root.innerHTML;
+    document.querySelector('#requirement-html').value = requirementQuill.root.innerHTML;
+
+    const btn = document.querySelector('.submit-btn button');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = 'Generating...';
+    }
+    const prog = document.getElementById('pdf-progress');
+    if (prog) prog.style.display = 'block';
+
+    let width = 0;
+    const interval = setInterval(() => {
+      width += 5;
+      if (width >= 95) clearInterval(interval);
+      else document.getElementById('pdf-bar').style.width = width + "%";
+    }, 300);
+  });
+
+  // Live update client address
+  const addrInput = document.getElementById('clientAddressInput');
+  function updateClientAddressDisplays() {
+    const text = (addrInput?.value || "").trim();
+    document.querySelectorAll('.client-address-display').forEach(el => el.textContent = text);
+  }
+  if (addrInput) {
+    addrInput.addEventListener('input', updateClientAddressDisplays);
+    window.addEventListener('DOMContentLoaded', updateClientAddressDisplays);
+  }
+
+  // Delete one card + reindex (cards only)
+  function deleteCard(button) {
+    const card = button.closest('.pdf-style-page[data-card="1"]');
+    if (card) {
+      card.remove();
+      reindexCards();
+    }
+  }
+  window.deleteCard = deleteCard; // expose for inline onclick
+
+  // Delete selected + reindex (cards only)
+  function deleteSelectedCards() {
+    const selected = document.querySelectorAll('.pdf-style-page[data-card="1"] .multi-delete-checkbox:checked');
+    if (selected.length === 0) { alert("No cards selected."); return; }
+    if (!confirm(`Delete ${selected.length} selected card(s)?`)) return;
+    selected.forEach(cb => cb.closest('.pdf-style-page[data-card="1"]').remove());
+    reindexCards();
+  }
+  window.deleteSelectedCards = deleteSelectedCards;
+
+  // Reindex thermal_i / normal_i / note_i and update count (cards only)
+  function reindexCards() {
+    const pages = Array.from(document.querySelectorAll('.pdf-style-page[data-card="1"]'));
+    let idx = 0;
+    pages.forEach(page => {
+      const therm = page.querySelector('input[name^="thermal_"]');
+      const norm  = page.querySelector('input[name^="normal_"]');
+      const note  = page.querySelector('textarea[name^="note_"]');
+      if (therm) therm.setAttribute('name', `thermal_${idx}`);
+      if (norm)  norm.setAttribute('name',  `normal_${idx}`);
+      if (note)  note.setAttribute('name',  `note_${idx}`);
+      idx += 1;
+    });
+    const countInput = document.querySelector('input[name="count"]');
+    if (countInput) countInput.value = idx;
+  }
+
+  // Initial count
+  window.addEventListener('DOMContentLoaded', reindexCards);
+</script>
+</body>
+</html>
