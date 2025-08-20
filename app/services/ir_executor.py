@@ -41,23 +41,10 @@ def run_ir_generation_sync(file_id: str):
                 shutil.move(os.path.join(latest_folder, img), os.path.join(source_dir, img))
         shutil.rmtree(latest_folder)
 
-    # Keep backup images (normal_ prefix) - cleanup disabled per user request
-    # _cleanup_backup_images(source_dir)
+    # Normal images are automatically preserved via rename at start of process
+    # No cleanup needed since images are properly organized from the beginning
 
     return redirect(f'/preview/{file_id}')
-
-
-def _cleanup_backup_images(source_dir: str):
-    """Keep normal images (normal_ prefix) - these are the original visible light photos"""
-    try:
-        # Get all normal image files in the directory for reporting only
-        normal_images = [f for f in os.listdir(source_dir) if f.startswith('normal_') and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-        
-        # NOTE: Normal images are preserved as they form pairs with IR images
-        print(f"Normal images preserved. Found {len(normal_images)} normal images for pairing with IR images")
-        
-    except Exception as e:
-        print(f"Error checking normal images: {e}")
 
 
 def _run_ir_generation_pipeline(file_id: str):
@@ -126,19 +113,11 @@ def _run_ir_generation_pipeline(file_id: str):
             with open(os.path.join(source_dir, "ir_done.flag"), "w") as f:
                 f.write("done")
 
-        for f in os.listdir(input_dir):
-            try:
-                os.remove(os.path.join(input_dir, f))
-            except Exception as e:
-                print(f"Could not delete {f}: {e}")
-
-        loops = math.ceil(img_count / 23)
-        for _ in range(loops):
-            subprocess.Popen([ahk_exe, step4], shell=True).wait()
-            time.sleep(1)
-
-        # Keep backup images (normal_ prefix) - cleanup disabled per user request
-        # _cleanup_backup_images(source_dir)
+        # FLIR input directory cleanup and step4 script are redundant
+        # since we already handled image organization at the beginning
+        # Original images were renamed to normal_ prefix (preserved)
+        # FLIR processing returned IR images to source directory
+        # No additional cleanup needed
 
     except Exception as e:
         print(f"Error in IR generation: {str(e)}")

@@ -329,11 +329,17 @@
           if (data.done) {
             clearInterval(checkInterval);
             clearInterval(progressInterval);
-            // Wait for cleanup to complete before reloading
-            waitForCleanupComplete(file_id);
+            // Since cleanup is now disabled, directly show completion
+            document.getElementById("loadingText").innerHTML = "✅ IR Generation Complete! Normal image pairs preserved.";
+            document.getElementById("loadingText").style.color = "#28a745";
+            
+            // Wait a moment to show completion message, then reload
+            setTimeout(() => {
+              location.reload();
+            }, 2000);
           }
         });
-    }, 3000);
+    }, 5000); // Increased from 3 seconds to 5 seconds
   }
 
   function waitForCleanupComplete(file_id) {
