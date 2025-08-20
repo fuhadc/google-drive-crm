@@ -1,0 +1,68 @@
+{
+  "branch_address": "",
+  "client_address": "",
+  "page_a_data": {},
+  "image_pairs": [
+    {
+      "thermal": "FLIR0001.jpg",
+      "normal": "FLIR0002.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0003.jpg",
+      "normal": "FLIR0004.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0005.jpg",
+      "normal": "FLIR0006.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0007.jpg",
+      "normal": "FLIR0008.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0009.jpg",
+      "normal": "FLIR0010.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0011.jpg",
+      "normal": "FLIR0012.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0013.jpg",
+      "normal": "FLIR0014.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0015.jpg",
+      "normal": "FLIR0016.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0017.jpg",
+      "normal": "FLIR0018.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0019.jpg",
+      "normal": "FLIR0020.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0021.jpg",
+      "normal": "FLIR0022.jpg",
+      "notes": ""
+    },
+    {
+      "thermal": "FLIR0023.jpg",
+      "normal": null,
+      "notes": ""
+    }
+  ],
+  "extra_page": []
+}

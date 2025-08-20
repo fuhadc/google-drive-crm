@@ -205,24 +205,62 @@ def update_report_processing_status():
 def delete():
     """Delete a report"""
     try:
-        file_id = request.form['file_id']
+        # Handle both form data and query parameters
+        file_id = request.form.get('file_id') or request.args.get('file_id')
         
-        # Delete from MongoDB
+        if not file_id:
+            print("Delete error: No file_id provided in form data or query parameters")
+            return "Error: No file_id provided", 400
+        
+        print(f"Attempting to delete report with file_id: {file_id}")
+        
+        # Delete from MongoDB first
         success = delete_report(file_id)
         
         if success:
+            print(f"Successfully deleted report {file_id} from database")
+            
+            # Also remove from processed files
+            try:
+                from ..services.db import remove_processed_file
+                remove_processed_file(file_id)
+                print(f"Removed {file_id} from processed files")
+            except Exception as processed_error:
+                print(f"Warning: Failed to remove from processed files: {processed_error}")
+            
+            # Delete physical files if they exist
+            try:
+                import shutil
+                folder_path = os.path.join('unzipped_zips', file_id)
+                if os.path.exists(folder_path):
+                    shutil.rmtree(folder_path)
+                    print(f"Deleted physical folder: {folder_path}")
+                else:
+                    print(f"Physical folder not found: {folder_path}")
+            except Exception as file_error:
+                print(f"Warning: Failed to delete physical files: {file_error}")
+            
             # Try to invalidate cache, but don't fail if Redis is down
             try:
                 cache_key = get_cache_key('report', file_id=file_id)
                 if hasattr(current_app, 'cache') and current_app.cache:
                     current_app.cache.delete(cache_key)
+                
+                # Also clear dashboard cache to update the view immediately
+                from ..services.cache import cache_service
+                cache_service.clear_pattern("dashboard:*")
+                print(f"Cache invalidated for deleted report {file_id}")
             except Exception as cache_error:
                 print(f"Cache invalidation failed (non-critical): {cache_error}")
             
             return redirect('/dashboard')
         else:
+            print(f"Failed to delete report {file_id} from database")
             return "Error deleting report", 500
             
+    except KeyError as e:
+        print(f"Delete error - missing parameter: {e}")
+        return "Error: Missing required parameter", 400
     except Exception as e:
         print(f"Delete error: {e}")
         return "Error deleting report", 500
