@@ -106,7 +106,8 @@ def download_and_unzip_zip(file_id: str, file_name: str) -> None:
         fh.seek(0)
 
         import zipfile
-        folder_path = os.path.join('unzipped_zips', file_id)
+        from .path_utils import path_manager
+        folder_path = path_manager.get_report_path(file_id)
         os.makedirs(folder_path, exist_ok=True)
         try:
             with zipfile.ZipFile(fh) as zf:

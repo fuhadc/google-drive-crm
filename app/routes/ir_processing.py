@@ -159,8 +159,9 @@ def check_cleanup_status(file_id):
             "backup_images": len(backup_images),
             "processed_images": len(processed_images),
             "backup_preserved": backup_preserved,
-            "cleanup_status": "preserved" if backup_preserved else "no_backups_found",
-            "note": "Original images are deleted immediately after copying to FLIR tool. Backup images (normal_ prefix) are now preserved."
+            "cleanup_status": "complete_with_preserved_backups" if backup_preserved else "no_backups_found",
+            "status_message": f"IR Generation Complete! You have {len(processed_images)} thermal images and {len(backup_images)} preserved normal images forming {len(processed_images)} pairs.",
+            "note": "Original images are deleted immediately after copying to FLIR tool. Backup images (normal_ prefix) are now preserved for report pairing."
         })
         
     except Exception as e:

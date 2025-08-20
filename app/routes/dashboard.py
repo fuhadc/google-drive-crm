@@ -7,6 +7,7 @@ from ..services.db import get_all_reports, get_report, save_report, delete_repor
 from ..services.drive_service import get_all_drive_files
 from ..services.cache import cached, invalidate_cache, get_cache_key
 from ..services.file_locker import with_file_lock, safe_file_operation
+from ..services.path_utils import path_manager
 
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -50,7 +51,7 @@ def dashboard():
             processed_file_ids.add(file_id)
             
             # Use file locking for safe file operations
-            folder_path = os.path.join('unzipped_zips', file_id)
+            folder_path = path_manager.get_report_path(file_id)
             if os.path.exists(folder_path):
                 try:
                     # Safe file operation with locking
@@ -231,7 +232,7 @@ def delete():
             # Delete physical files if they exist
             try:
                 import shutil
-                folder_path = os.path.join('unzipped_zips', file_id)
+                folder_path = path_manager.get_report_path(file_id)
                 if os.path.exists(folder_path):
                     shutil.rmtree(folder_path)
                     print(f"Deleted physical folder: {folder_path}")
