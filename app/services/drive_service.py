@@ -128,7 +128,7 @@ def download_and_unzip_zip(file_id: str, file_name: str) -> None:
                 from .db import save_report, add_processed_file
                 report_data = {
                     'name': file_name,
-                    'status': 'Pending',
+                    'status': 'Pending',  # Explicitly set to Pending
                     'report_processing_status': 'new survey report',
                     'images': image_files,
                     'versions': image_versions,
@@ -142,6 +142,14 @@ def download_and_unzip_zip(file_id: str, file_name: str) -> None:
                     print(f"Created report entry for {file_id}")
                     # Add to processed files
                     add_processed_file(file_id)
+                    
+                    # Invalidate dashboard cache to show new report immediately
+                    try:
+                        from .cache import cache_service
+                        cache_service.clear_pattern("dashboard:*")
+                        print(f"Dashboard cache invalidated for new report {file_id}")
+                    except Exception as cache_error:
+                        print(f"Warning: Failed to invalidate dashboard cache: {cache_error}")
                 else:
                     print(f"Warning: Failed to save report for {file_id}")
             else:

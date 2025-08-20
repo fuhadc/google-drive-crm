@@ -124,10 +124,12 @@ def _get_file_data(folder_path, report):
 
 def _set_default_report_status(report):
     """Set default status for reports"""
-    if 'status' not in report or report['status'] not in ['Pending', 'Ongoing', 'Done']:
+    # Handle None status or missing status
+    if 'status' not in report or report['status'] is None or report['status'] not in ['Pending', 'Ongoing', 'Done']:
         report['status'] = 'Pending'
     
-    if 'report_processing_status' not in report or report['report_processing_status'] not in ['new survey report', 'Re-survey report']:
+    # Handle None report_processing_status or missing report_processing_status
+    if 'report_processing_status' not in report or report['report_processing_status'] is None or report['report_processing_status'] not in ['new survey report', 'Re-survey report']:
         report['report_processing_status'] = 'new survey report'
 
 
