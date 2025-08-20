@@ -56,6 +56,8 @@ def get_drive_service():
             print(f"Please create a '{Config.SERVICE_ACCOUNT_FILE}' file with your service account credentials.")
             return None
         
+        print(f"Initializing Google Drive service with credentials file: {Config.SERVICE_ACCOUNT_FILE}")
+        
         # Use service account credentials from file
         try:
             _service_credentials = service_account.Credentials.from_service_account_file(
@@ -90,7 +92,7 @@ def download_and_unzip_zip(file_id: str, file_name: str) -> None:
     try:
         service = get_drive_service()
         if not service:
-            print("Error: Google Drive service not available")
+            print("Error: Google Drive service not available - check credentials and network connection")
             return
             
         request = service.files().get_media(fileId=file_id)

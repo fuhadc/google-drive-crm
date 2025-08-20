@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-from queue import Queue
+from queue import Queue, Empty
 from .image_optimizer import get_image_optimizer
 
 class ThumbnailPreloader:
@@ -36,15 +36,25 @@ class ThumbnailPreloader:
                 
                 directory_path, size = task
                 print(f"{worker_name}: Processing directory: {directory_path} with size {size}")
-                self._preload_directory(directory_path, size)
-                self.queue.task_done()
-                print(f"{worker_name}: Completed processing {directory_path}")
                 
+                try:
+                    self._preload_directory(directory_path, size)
+                    self.queue.task_done()
+                    print(f"{worker_name}: Completed processing {directory_path}")
+                except Exception as process_error:
+                    # Handle processing errors specifically
+                    print(f"{worker_name}: Error processing directory {directory_path}: {process_error}")
+                    self.queue.task_done()  # Mark task as done even if it failed
+                    continue
+                
+            except Empty:
+                # This is expected when there are no tasks, continue silently
+                continue
             except Exception as e:
-                # Only log actual errors, not queue timeout
-                if "Empty" not in str(e) and "timeout" not in str(e).lower():
-                    print(f"{worker_name}: Worker error: {e}")
-                # Don't sleep on every error, only on queue timeout
+                # Log actual errors with more detail
+                print(f"{worker_name}: Unexpected worker error: {type(e).__name__}: {e}")
+                # Add a small delay to prevent rapid error loops
+                time.sleep(0.1)
                 continue
     
     def _preload_directory(self, directory_path, size=(150, 150)):
