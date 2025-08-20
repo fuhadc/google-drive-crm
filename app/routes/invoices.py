@@ -46,6 +46,15 @@ def generate_invoice(payment_id):
     except Exception:
         created_date = created_at_raw
 
+    # Safely handle asset paths
+    def get_safe_asset_path(asset_name, fallback=""):
+        asset_path = os.path.join(current_app.static_folder, 'img', 'letterhead_assets' if 'letterhead' in asset_name else 'logo', asset_name)
+        if os.path.exists(asset_path):
+            return f"file:///{asset_path.replace(os.sep, '/')}"
+        else:
+            print(f"[WARNING] Invoice asset not found: {asset_path}")
+            return fallback
+
     rendered = render_template(
         'invoice_template.html',
         payment={
@@ -60,18 +69,28 @@ def generate_invoice(payment_id):
             "payment_id": payment.get("payment_id", "")
         },
         address=payment.get("address", ""),
-        header_path=f"file:///{os.path.join(current_app.static_folder, 'img', 'letterhead_assets', 'letterhead_header.png').replace(os.sep, '/')}",
-        footer_path=f"file:///{os.path.join(current_app.static_folder, 'img', 'letterhead_assets', 'letterhead_footer.png').replace(os.sep, '/')}",
-        logo_path=f"file:///{os.path.join(current_app.static_folder, 'img', 'logo', 'logo.png').replace(os.sep, '/')}",
-        icon_path=f"file:///{os.path.join(current_app.static_folder, 'img', 'logo', 'icon.png').replace(os.sep, '/')}"
+        header_path=get_safe_asset_path("letterhead_header.png"),
+        footer_path=get_safe_asset_path("letterhead_footer.png"),
+        logo_path=get_safe_asset_path("logo.png"),
+        icon_path=get_safe_asset_path("icon.png")
     )
 
     output_folder = os.path.join(current_app.static_folder, "invoices")
     os.makedirs(output_folder, exist_ok=True)
     output_path = os.path.join(output_folder, f"invoice_{payment_id}.pdf")
 
-    generate_html_pdf_from_string(rendered, output_path)
-
-    return send_from_directory(os.path.join(current_app.static_folder, 'invoices'), f"invoice_{payment_id}.pdf")
+    try:
+        generate_html_pdf_from_string(rendered, output_path)
+        
+        # Verify the PDF was created
+        if not os.path.exists(output_path):
+            print(f"[ERROR] Invoice PDF not created: {output_path}")
+            return "Invoice generation failed - PDF not created", 500
+            
+        return send_from_directory(os.path.join(current_app.static_folder, 'invoices'), f"invoice_{payment_id}.pdf")
+        
+    except Exception as e:
+        print(f"[ERROR] Invoice generation failed for payment {payment_id}: {e}")
+        return f"Invoice generation failed: {str(e)}", 500
 
 

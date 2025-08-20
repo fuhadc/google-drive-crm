@@ -61,17 +61,29 @@ def generate_html_pdf(
         extra_page = [extra_page]
 
     for pair in image_pairs:
-        thermal_path = os.path.join(base_path, pair.get("thermal", "") or "")
-        normal_path = os.path.join(base_path, pair.get("normal", "") or "")
-
-        pair["thermal"] = (
-            f"file:///{os.path.abspath(thermal_path).replace(os.sep, '/')}"
-            if pair.get("thermal") else None
-        )
-        pair["normal"] = (
-            f"file:///{os.path.abspath(normal_path).replace(os.sep, '/')}"
-            if pair.get("normal") else None
-        )
+        thermal_filename = pair.get("thermal", "")
+        normal_filename = pair.get("normal", "")
+        
+        # Only process if we have valid filenames
+        if thermal_filename and thermal_filename.strip():
+            thermal_path = os.path.join(base_path, thermal_filename.strip())
+            if os.path.exists(thermal_path):
+                pair["thermal"] = f"file:///{os.path.abspath(thermal_path).replace(os.sep, '/')}"
+            else:
+                print(f"[WARNING] Thermal image not found: {thermal_path}")
+                pair["thermal"] = None
+        else:
+            pair["thermal"] = None
+            
+        if normal_filename and normal_filename.strip():
+            normal_path = os.path.join(base_path, normal_filename.strip())
+            if os.path.exists(normal_path):
+                pair["normal"] = f"file:///{os.path.abspath(normal_path).replace(os.sep, '/')}"
+            else:
+                print(f"[WARNING] Normal image not found: {normal_path}")
+                pair["normal"] = None
+        else:
+            pair["normal"] = None
 
         note = (pair.get("notes") or "").strip()
         pair["notes"] = note if note and note.lower() != "no note provided" else ""
@@ -79,40 +91,86 @@ def generate_html_pdf(
     with open(template_path, "r", encoding="utf-8") as f:
         template_html = f.read()
 
+    # Validate static assets and provide safe fallbacks
+    def get_safe_asset_path(asset_path, asset_name):
+        if os.path.exists(asset_path):
+            return f"file:///{os.path.abspath(asset_path).replace(os.sep, '/')}"
+        else:
+            print(f"[WARNING] {asset_name} not found: {asset_path}")
+            # Return empty string for missing assets - template should handle gracefully
+            return ""
+    
     html = Template(template_html).render(
         image_pairs=image_pairs,
         extra_page=extra_page,
         page_a_data=page_a_data,
         branch_address=branch_address,
-        header_path=f"file:///{os.path.abspath(header_path).replace(os.sep, '/')}",
-        footer_path=f"file:///{os.path.abspath(footer_path).replace(os.sep, '/')}",
-        logo_path=f"file:///{os.path.abspath(logo_path).replace(os.sep, '/')}",
-        icon_path=f"file:///{os.path.abspath(icon_path).replace(os.sep, '/')}",
+        header_path=get_safe_asset_path(header_path, "Header image"),
+        footer_path=get_safe_asset_path(footer_path, "Footer image"),
+        logo_path=get_safe_asset_path(logo_path, "Logo image"),
+        icon_path=get_safe_asset_path(icon_path, "Icon image"),
     )
 
     generate_html_pdf_from_string(html, output_path)
 
 
 def generate_html_pdf_from_string(html_string, output_path):
-    with open("debug_invoice.html", "w", encoding="utf-8") as debug_file:
-        debug_file.write(html_string)
+    # Create debug file for troubleshooting
+    try:
+        with open("debug_invoice.html", "w", encoding="utf-8") as debug_file:
+            debug_file.write(html_string)
+    except Exception as e:
+        print(f"[WARNING] Could not write debug file: {e}")
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w', encoding='utf-8') as tmp_html:
-        tmp_html.write(html_string)
-        tmp_html_path = tmp_html.name
+    tmp_html_path = None
+    try:
+        # Create temporary HTML file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w', encoding='utf-8') as tmp_html:
+            tmp_html.write(html_string)
+            tmp_html_path = tmp_html.name
 
-    cmd = (
-        '"C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe" '
-        '--enable-local-file-access '
-        '--margin-top 0mm --margin-right 0mm --margin-bottom 0mm --margin-left 0mm '
-        '--page-size A4 --disable-smart-shrinking '
-        f'"file:///{tmp_html_path.replace(os.sep, "/")}" '
-        f'"{output_path.replace(os.sep, "/")}"'
-    )
-    subprocess.run(cmd, shell=True, check=True)
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    os.remove(tmp_html_path)
-    print(f"[PDF] Generated: {output_path}")
+        # Build wkhtmltopdf command
+        cmd = (
+            '"C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe" '
+            '--enable-local-file-access '
+            '--margin-top 0mm --margin-right 0mm --margin-bottom 0mm --margin-left 0mm '
+            '--page-size A4 --disable-smart-shrinking '
+            f'"file:///{tmp_html_path.replace(os.sep, "/")}" '
+            f'"{output_path.replace(os.sep, "/")}"'
+        )
+        
+        print(f"[PDF] Executing command: {cmd}")
+        
+        # Run command with proper error handling
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            error_msg = f"wkhtmltopdf failed with exit code {result.returncode}"
+            if result.stderr:
+                error_msg += f"\nStderr: {result.stderr}"
+            if result.stdout:
+                error_msg += f"\nStdout: {result.stdout}"
+            print(f"[ERROR] {error_msg}")
+            raise RuntimeError(error_msg)
+        
+        if os.path.exists(output_path):
+            print(f"[PDF] Successfully generated: {output_path}")
+        else:
+            raise RuntimeError(f"PDF generation appeared to succeed but output file not found: {output_path}")
+            
+    except Exception as e:
+        print(f"[ERROR] PDF generation failed: {e}")
+        raise
+    finally:
+        # Clean up temporary file
+        if tmp_html_path and os.path.exists(tmp_html_path):
+            try:
+                os.remove(tmp_html_path)
+            except Exception as e:
+                print(f"[WARNING] Could not remove temporary file {tmp_html_path}: {e}")
 
 
 def create_sample_edited_report(file_id):
