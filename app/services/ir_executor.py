@@ -18,19 +18,17 @@ def run_ir_generation_sync(file_id: str):
     for f in os.listdir(input_dir):
         os.remove(os.path.join(input_dir, f))
 
-    # Copy images to FLIR input and immediately delete originals
+    # Copy images to FLIR input and rename originals to normal_ prefix
     for img in os.listdir(source_dir):
         if img.lower().endswith(('.jpg', '.jpeg', '.png')):
-            # Copy to FLIR input directory
+            # Copy to FLIR input directory for processing
             shutil.copy(os.path.join(source_dir, img), os.path.join(input_dir, img))
-            # Create backup copy with normal_ prefix for reference
-            shutil.copy(os.path.join(source_dir, img), os.path.join(source_dir, f"normal_{img}"))
-            # Immediately delete the original image after copying
+            # Rename original to normal_ prefix (preserve as normal image)
             try:
-                os.remove(os.path.join(source_dir, img))
-                print(f"Deleted original image immediately after copying: {img}")
+                os.rename(os.path.join(source_dir, img), os.path.join(source_dir, f"normal_{img}"))
+                print(f"Renamed original image to normal_{img}")
             except Exception as e:
-                print(f"Could not delete original image {img}: {e}")
+                print(f"Could not rename original image {img}: {e}")
 
     subprocess.run([ahk_exe, ahk_script])
 
@@ -50,16 +48,16 @@ def run_ir_generation_sync(file_id: str):
 
 
 def _cleanup_backup_images(source_dir: str):
-    """Keep backup images (normal_ prefix) - cleanup disabled per user request"""
+    """Keep normal images (normal_ prefix) - these are the original visible light photos"""
     try:
-        # Get all backup image files in the directory for reporting only
-        backup_images = [f for f in os.listdir(source_dir) if f.startswith('normal_') and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+        # Get all normal image files in the directory for reporting only
+        normal_images = [f for f in os.listdir(source_dir) if f.startswith('normal_') and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
         
-        # NOTE: Backup images are now preserved instead of deleted
-        print(f"Backup cleanup disabled. Found {len(backup_images)} backup images that will be preserved")
+        # NOTE: Normal images are preserved as they form pairs with IR images
+        print(f"Normal images preserved. Found {len(normal_images)} normal images for pairing with IR images")
         
     except Exception as e:
-        print(f"Error checking backup images: {e}")
+        print(f"Error checking normal images: {e}")
 
 
 def _run_ir_generation_pipeline(file_id: str):
@@ -87,19 +85,17 @@ def _run_ir_generation_pipeline(file_id: str):
         for f in os.listdir(input_dir):
             os.remove(os.path.join(input_dir, f))
 
-        # Copy images to FLIR input and immediately delete originals
+        # Copy images to FLIR input and rename originals to normal_ prefix
         for img in os.listdir(source_dir):
             if img.lower().endswith(('.jpg', '.jpeg', '.png')):
-                # Copy to FLIR input directory
+                # Copy to FLIR input directory for processing
                 shutil.copy(os.path.join(source_dir, img), os.path.join(input_dir, img))
-                # Create backup copy with normal_ prefix for reference
-                shutil.copy(os.path.join(source_dir, img), os.path.join(source_dir, f"normal_{img}"))
-                # Immediately delete the original image after copying
+                # Rename original to normal_ prefix (preserve as normal image)
                 try:
-                    os.remove(os.path.join(source_dir, img))
-                    print(f"Deleted original image immediately after copying: {img}")
+                    os.rename(os.path.join(source_dir, img), os.path.join(source_dir, f"normal_{img}"))
+                    print(f"Renamed original image to normal_{img}")
                 except Exception as e:
-                    print(f"Could not delete original image {img}: {e}")
+                    print(f"Could not rename original image {img}: {e}")
 
         subprocess.Popen([ahk_exe, step1], shell=True).wait()
         subprocess.Popen([ahk_exe, step2], shell=True).wait()
