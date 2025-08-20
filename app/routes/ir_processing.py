@@ -151,16 +151,16 @@ def check_cleanup_status(file_id):
         backup_images = [f for f in all_images if f.startswith('normal_')]
         processed_images = [f for f in all_images if not f.startswith('normal_')]
         
-        # Check if cleanup has been done (backup images should be removed after processing)
-        cleanup_done = len(backup_images) == 0
+        # Backup images are now preserved (cleanup disabled per user request)
+        backup_preserved = len(backup_images) > 0
         
         return jsonify({
             "total_images": len(all_images),
             "backup_images": len(backup_images),
             "processed_images": len(processed_images),
-            "cleanup_done": cleanup_done,
-            "cleanup_status": "completed" if cleanup_done else "pending",
-            "note": "Original images are deleted immediately after copying to FLIR tool. Backup images are cleaned up after processing."
+            "backup_preserved": backup_preserved,
+            "cleanup_status": "preserved" if backup_preserved else "no_backups_found",
+            "note": "Original images are deleted immediately after copying to FLIR tool. Backup images (normal_ prefix) are now preserved."
         })
         
     except Exception as e:

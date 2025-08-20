@@ -43,30 +43,23 @@ def run_ir_generation_sync(file_id: str):
                 shutil.move(os.path.join(latest_folder, img), os.path.join(source_dir, img))
         shutil.rmtree(latest_folder)
 
-    # Clean up backup images after processing (these are no longer needed)
-    _cleanup_backup_images(source_dir)
+    # Keep backup images (normal_ prefix) - cleanup disabled per user request
+    # _cleanup_backup_images(source_dir)
 
     return redirect(f'/preview/{file_id}')
 
 
 def _cleanup_backup_images(source_dir: str):
-    """Clean up backup images (normal_ prefix) after IR processing is complete"""
+    """Keep backup images (normal_ prefix) - cleanup disabled per user request"""
     try:
-        # Get all backup image files in the directory
+        # Get all backup image files in the directory for reporting only
         backup_images = [f for f in os.listdir(source_dir) if f.startswith('normal_') and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
         
-        # Delete backup images
-        for backup_img in backup_images:
-            try:
-                os.remove(os.path.join(source_dir, backup_img))
-                print(f"Deleted backup image: {backup_img}")
-            except Exception as e:
-                print(f"Could not delete backup image {backup_img}: {e}")
-        
-        print(f"Backup cleanup complete. Removed {len(backup_images)} backup images")
+        # NOTE: Backup images are now preserved instead of deleted
+        print(f"Backup cleanup disabled. Found {len(backup_images)} backup images that will be preserved")
         
     except Exception as e:
-        print(f"Error during backup cleanup: {e}")
+        print(f"Error checking backup images: {e}")
 
 
 def _run_ir_generation_pipeline(file_id: str):
@@ -148,8 +141,8 @@ def _run_ir_generation_pipeline(file_id: str):
             subprocess.Popen([ahk_exe, step4], shell=True).wait()
             time.sleep(1)
 
-        # Clean up backup images after processing (these are no longer needed)
-        _cleanup_backup_images(source_dir)
+        # Keep backup images (normal_ prefix) - cleanup disabled per user request
+        # _cleanup_backup_images(source_dir)
 
     except Exception as e:
         print(f"Error in IR generation: {str(e)}")
